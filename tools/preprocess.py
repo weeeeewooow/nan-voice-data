@@ -6,27 +6,6 @@ import librosa
 from datasets import Dataset
 from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
 
-# 1. 設定資料夾路徑（請改成你本機的路徑）
-data_dir = os.curdir   # nan-tw 資料夾，內含 clips 和 train.tsv
-
-# 2. 讀取 .tsv
-df = pd.read_csv(os.path.join(data_dir, "merged_clips_updated.tsv"), sep="\t")
-
-# 4. 產生完整音訊路徑
-df["audio"] = df["path"].apply(lambda x: os.path.join(data_dir, x.replace("\\", "/"))) # Construct absolute path
-df["text"] = df["sentence"]
-df = df[["audio", "text"]]
-
-
-# 5. 分割訓練與驗證集
-split = int(len(df) * 0.9)
-df_train = df[:split].reset_index(drop=True)
-df_val = df[split:].reset_index(drop=True)
-
-# 6. 建立 Dataset 物件
-train_ds = Dataset.from_pandas(df_train)
-val_ds = Dataset.from_pandas(df_val)
-
 processor = AutoProcessor.from_pretrained("Jobaula/whisper-medium-nan-tw-common-voice")
 model = AutoModelForSpeechSeq2Seq.from_pretrained("Jobaula/whisper-medium-nan-tw-common-voice")
 
@@ -36,8 +15,11 @@ model.config.forced_decoder_ids = processor.get_decoder_prompt_ids(
     task="transcribe"
 )
 
+
 # 9. 定義 preprocess 函數（加入檔案存在檢查）
 def preprocess(batch):
+    
+    processor = AutoProcessor.from_pretrained("Jobaula/whisper-medium-nan-tw-common-voice")
     audio_path = batch["audio"]
     audio, _ = librosa.load(audio_path, sr=16000)
 
@@ -56,24 +38,38 @@ def preprocess(batch):
         "input_features": features,
         "labels": labels
     }
+def spilt(tsv_path, split_ratio=0.9):
+    data_dir = os.curdir  # nan-tw 資料夾，內含 clips 和 train.tsv
+    # 2. 讀取 .tsv
+    df = pd.read_csv(os.path.join(data_dir, tsv_path), sep="\t")
+
+    # 4. 產生完整音訊路徑
+    df["audio"] = df["path"].apply(lambda x: os.path.join(data_dir, x.replace("\\", "/"))) # Construct absolute path
+    df["text"] = df["sentence"]
+    df = df[["audio", "text"]]
+    df = df.reset_index(drop=True)
+    # 5. 分割訓練與驗證集
+    split = int(len(df) * split_ratio)
+    df_train = df[:split].reset_index(drop=True)
+    df_val = df[split:].reset_index(drop=True)
+
+    return df_train, df_val
 
 
+def preprocess_and_save(df, dsname):
+    # 6. 建立 Dataset 物件
+    ds = Dataset.from_pandas(df)
+    
+    # 10. 使用 map 預處理 Dataset
+    ds = ds.map(preprocess, remove_columns=ds.column_names)
+    preprocessed_path = "./preprocessed_data/" + dsname
 
+    # Save the preprocessed datasets
+    print(f"Saving preprocessed train dataset to {preprocessed_path}...")
+    ds.save_to_disk(preprocessed_path)
 
-# 10. 使用 map 預處理 Dataset
-train_ds = train_ds.map(preprocess, remove_columns=train_ds.column_names)
-val_ds = val_ds.map(preprocess, remove_columns=val_ds.column_names)
-
-
-# Define paths to save the preprocessed datasets
-preprocessed_train_path = "./preprocessed_data/train"
-preprocessed_val_path = "./preprocessed_data/val"
-
-# Save the preprocessed datasets
-print(f"Saving preprocessed train dataset to {preprocessed_train_path}...")
-train_ds.save_to_disk(preprocessed_train_path)
-
-print(f"Saving preprocessed validation dataset to {preprocessed_val_path}...")
-val_ds.save_to_disk(preprocessed_val_path)
-
-print("Preprocessed datasets saved.")
+#tra_val=spilt("train.tsv", 0.9)
+#preprocess_and_save(tra_val[0], "train")
+#preprocess_and_save(tra_val[1], "val")
+test_val, _=spilt("test.tsv", 1.0)
+preprocess_and_save(test_val, "test")

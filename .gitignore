@@ -1,4 +1,5 @@
 merged_clips/
 mergeed_clips/
 preprocessed_data/
-preprocessed_data.zip
+*.zip
+final-checkpoint/
