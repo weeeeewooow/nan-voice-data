@@ -68,8 +68,8 @@ def preprocess_and_save(df, dsname):
     print(f"Saving preprocessed train dataset to {preprocessed_path}...")
     ds.save_to_disk(preprocessed_path)
 
-#tra_val=spilt("train.tsv", 0.9)
-#preprocess_and_save(tra_val[0], "train")
-#preprocess_and_save(tra_val[1], "val")
+tra_val=spilt("train.tsv", 0.9)
+preprocess_and_save(tra_val[0], "train")
+preprocess_and_save(tra_val[1], "val")
 test_val, _=spilt("test.tsv", 1.0)
 preprocess_and_save(test_val, "test")

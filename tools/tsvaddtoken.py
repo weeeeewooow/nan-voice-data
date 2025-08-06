@@ -1,7 +1,7 @@
 import csv
 
 # ===== 設定 =====
-INPUT_TSV = "train.tsv"   # 你的原始資料
+INPUT_TSV = "test.tsv"   # 你的原始資料
 OUTPUT_TSV = "new_" + INPUT_TSV  # 輸出的檔案
 ADD_NAN_TOKEN = True  # True 表示使用 <|nan|> 作為台語語言 token，False 則直接用 <|zh|>
 
