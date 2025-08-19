@@ -1,8 +1,8 @@
 import os
 import csv
 
-CLIPS_DIR = "clips"
-OUTPUT_TSV = "clips.tsv"
+CLIPS_DIR = "extraclipsfortraining" 
+OUTPUT_TSV = "letmecook.tsv"
 
 
 with open(OUTPUT_TSV, 'w', newline='', encoding='utf-8') as tsvfile:
@@ -16,4 +16,5 @@ with open(OUTPUT_TSV, 'w', newline='', encoding='utf-8') as tsvfile:
             if os.path.exists(txt_path):
                 with open(txt_path, 'r', encoding='utf-8') as f:
                     text = f.read().strip()
+                os.remove(txt_path)
                 writer.writerow([wav_path, text])
